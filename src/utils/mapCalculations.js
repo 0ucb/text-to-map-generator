@@ -87,6 +87,7 @@ export const stringSimilarity = (str1, str2) => {
   return (longer.length - editDistance) / longer.length;
 };
 
+// Levenshtein distance function for string similarity
 const levenshteinDistance = (str1, str2) => {
   const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
   

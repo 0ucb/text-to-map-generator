@@ -54,7 +54,10 @@ const TextToMapApp = () => {
     chatInput,
     setChatInput,
     isClaudeThinking,
-    sendMessageToClaude
+    sendMessageToClaude,
+    askClaudeToAnalyze,
+    askClaudeToAddFeatures,
+    askClaudeToOptimize
   } = useClaudeIntegration(locations, paths, waterways, regions);
 
   // Panel visibility states
@@ -211,6 +214,9 @@ const TextToMapApp = () => {
             setChatInput={setChatInput}
             isClaudeThinking={isClaudeThinking}
             sendMessageToClaude={sendMessageToClaude}
+            askClaudeToAnalyze={askClaudeToAnalyze}
+            askClaudeToAddFeatures={askClaudeToAddFeatures}
+            askClaudeToOptimize={askClaudeToOptimize}
             setShowChatPanel={setShowChatPanel}
             setSelectedItem={setSelectedItem}
             locations={locations}
