@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Eye, EyeOff, Save, RefreshCw } from 'lucide-react';
-import { AI_PROVIDERS, PROVIDER_CONFIG, AISettings } from '../services/aiProviders';
+import { AI_PROVIDERS, PROVIDER_CONFIG, AISettings, ModelFetcher } from '../services/aiProviders';
 
 const AISettingsPanel = ({ isOpen, onClose }) => {
   const [selectedProvider, setSelectedProvider] = useState(AI_PROVIDERS.OPENAI);
   const [apiKeys, setApiKeys] = useState({});
   const [customEndpoints, setCustomEndpoints] = useState({});
   const [selectedModels, setSelectedModels] = useState({});
+  const [availableModels, setAvailableModels] = useState({});
   const [showApiKeys, setShowApiKeys] = useState({});
   const [testResults, setTestResults] = useState({});
   const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [isRefreshingModels, setIsRefreshingModels] = useState({});
 
   useEffect(() => {
     if (isOpen) {
@@ -22,6 +24,13 @@ const AISettingsPanel = ({ isOpen, onClose }) => {
     setApiKeys(AISettings.getApiKeys());
     setCustomEndpoints(AISettings.getCustomEndpoints());
     setSelectedModels(AISettings.getSelectedModels());
+    
+    // Load available models for each provider
+    const models = {};
+    Object.keys(PROVIDER_CONFIG).forEach(provider => {
+      models[provider] = AISettings.getAvailableModels(provider);
+    });
+    setAvailableModels(models);
   };
 
   const saveSettings = () => {
@@ -46,6 +55,32 @@ const AISettingsPanel = ({ isOpen, onClose }) => {
     });
     
     onClose();
+  };
+
+  const refreshModels = async (provider) => {
+    const config = PROVIDER_CONFIG[provider];
+    
+    if (!config.supportsModelListing) {
+      return; // Can't refresh models for providers that don't support it
+    }
+
+    const apiKey = apiKeys[provider];
+    if (config.requiresApiKey && !apiKey) {
+      setTestResults({ ...testResults, [provider]: 'error: API key required for model refresh' });
+      return;
+    }
+
+    setIsRefreshingModels({ ...isRefreshingModels, [provider]: true });
+    
+    try {
+      const models = await ModelFetcher.refreshModels(provider, apiKey);
+      setAvailableModels({ ...availableModels, [provider]: models });
+      setTestResults({ ...testResults, [provider]: `refreshed: Found ${models.length} models` });
+    } catch (error) {
+      setTestResults({ ...testResults, [provider]: `error: ${error.message}` });
+    } finally {
+      setIsRefreshingModels({ ...isRefreshingModels, [provider]: false });
+    }
   };
 
   const testConnection = async (provider) => {
@@ -214,31 +249,45 @@ const AISettingsPanel = ({ isOpen, onClose }) => {
                   </div>
                 )}
 
-                {/* Custom Endpoint */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Endpoint URL {!config.requiresApiKey && '(Local)'}
-                  </label>
-                  <input
-                    type="text"
-                    value={customEndpoints[providerKey] || ''}
-                    onChange={(e) => setCustomEndpoints({
-                      ...customEndpoints,
-                      [providerKey]: e.target.value
-                    })}
-                    placeholder={config.endpoint}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Default: {config.endpoint}
-                  </p>
-                </div>
+                {/* Custom Endpoint - Only for local providers */}
+                {config.customEndpoint && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Custom Endpoint URL (Local)
+                    </label>
+                    <input
+                      type="text"
+                      value={customEndpoints[providerKey] || ''}
+                      onChange={(e) => setCustomEndpoints({
+                        ...customEndpoints,
+                        [providerKey]: e.target.value
+                      })}
+                      placeholder={config.chatEndpoint}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Default: {config.chatEndpoint}
+                    </p>
+                  </div>
+                )}
 
                 {/* Model Selection */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Model
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Model
+                    </label>
+                    {config.supportsModelListing && (
+                      <button
+                        onClick={() => refreshModels(providerKey)}
+                        disabled={isRefreshingModels[providerKey]}
+                        className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isRefreshingModels[providerKey] ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </button>
+                    )}
+                  </div>
                   <select
                     value={selectedModels[providerKey] || config.defaultModel}
                     onChange={(e) => setSelectedModels({
@@ -247,18 +296,33 @@ const AISettingsPanel = ({ isOpen, onClose }) => {
                     })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    {config.models.map(model => (
+                    {(availableModels[providerKey] || config.fallbackModels || [config.defaultModel]).map(model => (
                       <option key={model} value={model}>
                         {model}
                       </option>
                     ))}
                   </select>
+                  {!config.supportsModelListing && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Models are predefined for this provider
+                    </p>
+                  )}
+                  {AISettings.isModelCacheExpired() && config.supportsModelListing && (
+                    <p className="text-xs text-orange-600 mt-1">
+                      Model list may be outdated. Click refresh to update.
+                    </p>
+                  )}
                 </div>
 
-                {/* Error Display */}
+                {/* Status Display */}
                 {testResults[providerKey]?.startsWith('error:') && (
                   <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
                     {testResults[providerKey].replace('error: ', '')}
+                  </div>
+                )}
+                {testResults[providerKey]?.startsWith('refreshed:') && (
+                  <div className="text-green-600 text-sm bg-green-50 p-2 rounded">
+                    {testResults[providerKey].replace('refreshed: ', '')}
                   </div>
                 )}
               </div>

@@ -11,10 +11,12 @@ export const AI_PROVIDERS = {
 export const PROVIDER_CONFIG = {
   [AI_PROVIDERS.OPENAI]: {
     name: 'OpenAI',
-    endpoint: 'https://api.openai.com/v1/chat/completions',
-    defaultModel: 'gpt-4',
-    models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+    chatEndpoint: 'https://api.openai.com/v1/chat/completions',
+    modelsEndpoint: 'https://api.openai.com/v1/models',
+    defaultModel: 'gpt-4o',
+    fallbackModels: ['gpt-4o', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
     requiresApiKey: true,
+    supportsModelListing: true,
     headers: (apiKey) => ({
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
@@ -22,10 +24,12 @@ export const PROVIDER_CONFIG = {
   },
   [AI_PROVIDERS.ANTHROPIC]: {
     name: 'Anthropic Claude',
-    endpoint: 'https://api.anthropic.com/v1/messages',
-    defaultModel: 'claude-3-sonnet-20240229',
-    models: ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
+    chatEndpoint: 'https://api.anthropic.com/v1/messages',
+    modelsEndpoint: null, // Anthropic doesn't have a public models API
+    defaultModel: 'claude-3-5-sonnet-20241022',
+    fallbackModels: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
     requiresApiKey: true,
+    supportsModelListing: false,
     headers: (apiKey) => ({
       'x-api-key': apiKey,
       'Content-Type': 'application/json',
@@ -34,10 +38,12 @@ export const PROVIDER_CONFIG = {
   },
   [AI_PROVIDERS.DEEPSEEK]: {
     name: 'DeepSeek',
-    endpoint: 'https://api.deepseek.com/v1/chat/completions',
+    chatEndpoint: 'https://api.deepseek.com/v1/chat/completions',
+    modelsEndpoint: 'https://api.deepseek.com/v1/models',
     defaultModel: 'deepseek-chat',
-    models: ['deepseek-chat', 'deepseek-coder'],
+    fallbackModels: ['deepseek-chat', 'deepseek-coder'],
     requiresApiKey: true,
+    supportsModelListing: true,
     headers: (apiKey) => ({
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
@@ -45,31 +51,38 @@ export const PROVIDER_CONFIG = {
   },
   [AI_PROVIDERS.GOOGLE]: {
     name: 'Google Gemini',
-    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+    chatEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+    modelsEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
     defaultModel: 'gemini-1.5-pro',
-    models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'],
+    fallbackModels: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'],
     requiresApiKey: true,
+    supportsModelListing: true,
     headers: (apiKey) => ({
-      'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey
+      'Content-Type': 'application/json'
     })
   },
   [AI_PROVIDERS.LM_STUDIO]: {
     name: 'LM Studio',
-    endpoint: 'http://localhost:1234/v1/chat/completions',
+    chatEndpoint: 'http://localhost:1234/v1/chat/completions',
+    modelsEndpoint: 'http://localhost:1234/v1/models',
     defaultModel: 'local-model',
-    models: ['local-model'],
+    fallbackModels: ['local-model'],
     requiresApiKey: false,
+    supportsModelListing: true,
+    customEndpoint: true,
     headers: () => ({
       'Content-Type': 'application/json'
     })
   },
   [AI_PROVIDERS.KOBOLD]: {
     name: 'Kobold AI',
-    endpoint: 'http://localhost:5001/api/v1/generate',
+    chatEndpoint: 'http://localhost:5001/api/v1/generate',
+    modelsEndpoint: null,
     defaultModel: 'kobold',
-    models: ['kobold'],
+    fallbackModels: ['kobold'],
     requiresApiKey: false,
+    supportsModelListing: false,
+    customEndpoint: true,
     headers: () => ({
       'Content-Type': 'application/json'
     })
@@ -81,7 +94,9 @@ export const STORAGE_KEYS = {
   SELECTED_PROVIDER: 'ai_selected_provider',
   API_KEYS: 'ai_api_keys',
   CUSTOM_ENDPOINTS: 'ai_custom_endpoints',
-  SELECTED_MODELS: 'ai_selected_models'
+  SELECTED_MODELS: 'ai_selected_models',
+  CACHED_MODELS: 'ai_cached_models',
+  MODEL_CACHE_TIMESTAMP: 'ai_model_cache_timestamp'
 };
 
 // Settings management
@@ -136,14 +151,59 @@ export class AISettings {
     localStorage.setItem(STORAGE_KEYS.SELECTED_MODELS, JSON.stringify(models));
   }
 
+  static getCachedModels() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.CACHED_MODELS) || '{}');
+    } catch {
+      return {};
+    }
+  }
+
+  static setCachedModels(provider, models) {
+    const cached = this.getCachedModels();
+    cached[provider] = models;
+    localStorage.setItem(STORAGE_KEYS.CACHED_MODELS, JSON.stringify(cached));
+    localStorage.setItem(STORAGE_KEYS.MODEL_CACHE_TIMESTAMP, Date.now().toString());
+  }
+
+  static getModelCacheAge() {
+    const timestamp = localStorage.getItem(STORAGE_KEYS.MODEL_CACHE_TIMESTAMP);
+    if (!timestamp) return Infinity;
+    return Date.now() - parseInt(timestamp);
+  }
+
+  static isModelCacheExpired() {
+    return this.getModelCacheAge() > 24 * 60 * 60 * 1000; // 24 hours
+  }
+
+  static getAvailableModels(provider) {
+    const config = PROVIDER_CONFIG[provider];
+    const cached = this.getCachedModels();
+    
+    // Return cached models if available and not expired
+    if (cached[provider] && !this.isModelCacheExpired()) {
+      return cached[provider];
+    }
+    
+    // Return fallback models
+    return config.fallbackModels || [config.defaultModel];
+  }
+
   static getProviderConfig(provider) {
     const config = { ...PROVIDER_CONFIG[provider] };
     const customEndpoints = this.getCustomEndpoints();
     const selectedModels = this.getSelectedModels();
     
-    if (customEndpoints[provider]) {
-      config.endpoint = customEndpoints[provider];
+    // Only allow custom endpoints for local providers
+    if (customEndpoints[provider] && config.customEndpoint) {
+      config.chatEndpoint = customEndpoints[provider];
+      // Update models endpoint for local providers
+      if (config.modelsEndpoint) {
+        config.modelsEndpoint = customEndpoints[provider].replace('/chat/completions', '/models');
+      }
     }
+    
+    config.availableModels = this.getAvailableModels(provider);
     
     if (selectedModels[provider]) {
       config.selectedModel = selectedModels[provider];
@@ -152,6 +212,89 @@ export class AISettings {
     }
     
     return config;
+  }
+}
+
+// Model fetching functionality
+export class ModelFetcher {
+  static async fetchModels(provider, apiKey) {
+    const config = PROVIDER_CONFIG[provider];
+    
+    if (!config.supportsModelListing || !config.modelsEndpoint) {
+      return config.fallbackModels || [config.defaultModel];
+    }
+
+    try {
+      let endpoint = config.modelsEndpoint;
+      let fetchOptions = {
+        method: 'GET',
+        headers: config.headers(apiKey)
+      };
+
+      // Handle Google's different API structure
+      if (provider === AI_PROVIDERS.GOOGLE) {
+        endpoint = `${config.modelsEndpoint}?key=${apiKey}`;
+        fetchOptions.headers = { 'Content-Type': 'application/json' };
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const response = await fetch(endpoint, {
+        ...fetchOptions,
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      return this.parseModelsResponse(provider, data);
+    } catch (error) {
+      console.warn(`Failed to fetch models for ${config.name}:`, error.message);
+      return config.fallbackModels || [config.defaultModel];
+    }
+  }
+
+  static parseModelsResponse(provider, data) {
+    const config = PROVIDER_CONFIG[provider];
+    
+    try {
+      switch (provider) {
+        case AI_PROVIDERS.OPENAI:
+        case AI_PROVIDERS.DEEPSEEK:
+        case AI_PROVIDERS.LM_STUDIO:
+          return data.data
+            ?.filter(model => model.id && !model.id.includes('embedding'))
+            ?.map(model => model.id)
+            ?.sort() || config.fallbackModels;
+
+        case AI_PROVIDERS.GOOGLE:
+          return data.models
+            ?.filter(model => 
+              model.name && 
+              model.name.includes('gemini') &&
+              model.supportedGenerationMethods?.includes('generateContent')
+            )
+            ?.map(model => model.name.replace('models/', ''))
+            ?.sort() || config.fallbackModels;
+
+        default:
+          return config.fallbackModels || [config.defaultModel];
+      }
+    } catch (error) {
+      console.warn(`Failed to parse models response for ${config.name}:`, error);
+      return config.fallbackModels || [config.defaultModel];
+    }
+  }
+
+  static async refreshModels(provider, apiKey) {
+    const models = await this.fetchModels(provider, apiKey);
+    AISettings.setCachedModels(provider, models);
+    return models;
   }
 }
 
@@ -282,7 +425,7 @@ Your entire response MUST be a single, valid JSON object. DO NOT include any tex
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
     try {
-      const response = await fetch(config.endpoint, {
+      const response = await fetch(config.chatEndpoint, {
         method: 'POST',
         headers: config.headers(apiKey),
         body: JSON.stringify({
@@ -328,7 +471,7 @@ Your entire response MUST be a single, valid JSON object. DO NOT include any tex
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
-      const response = await fetch(config.endpoint, {
+      const response = await fetch(config.chatEndpoint, {
         method: 'POST',
         headers: config.headers(apiKey),
         body: JSON.stringify({
@@ -368,7 +511,7 @@ Your entire response MUST be a single, valid JSON object. DO NOT include any tex
   }
 
   static async sendKoboldRequest(config, prompt) {
-    const response = await fetch(config.endpoint, {
+    const response = await fetch(config.chatEndpoint, {
       method: 'POST',
       headers: config.headers(),
       body: JSON.stringify({
@@ -393,7 +536,7 @@ Your entire response MUST be a single, valid JSON object. DO NOT include any tex
   }
 
   static async sendGoogleRequest(config, apiKey, prompt) {
-    const endpoint = config.endpoint.replace('{model}', config.selectedModel);
+    const endpoint = config.chatEndpoint.replace('{model}', config.selectedModel);
     
     const response = await fetch(`${endpoint}?key=${apiKey}`, {
       method: 'POST',
