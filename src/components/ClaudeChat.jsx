@@ -1,5 +1,6 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Settings } from 'lucide-react';
+import AISettingsPanel from './AISettingsPanel';
 
 const ClaudeChat = ({
   chatMessages,
@@ -14,7 +15,11 @@ const ClaudeChat = ({
   askClaudeToAddFeatures,
   askClaudeToOptimize
 }) => {
+  const [showSettings, setShowSettings] = useState(false);
+
   return (
+    <>
+      <AISettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
     <div className="absolute right-0 top-0 bottom-0 w-96 bg-white shadow-lg border-l flex flex-col">
       <div className="p-4 border-b bg-purple-50">
         <div className="flex items-center justify-between mb-2">
@@ -24,15 +29,24 @@ const ClaudeChat = ({
             </svg>
             Claude Map Assistant
           </h3>
-          <button
-            onClick={() => {
-              setShowChatPanel(false);
-              setSelectedItem(null);
-            }}
-            className="p-1 hover:bg-purple-100 rounded"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-1 hover:bg-purple-100 rounded"
+              title="AI Settings"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                setShowChatPanel(false);
+                setSelectedItem(null);
+              }}
+              className="p-1 hover:bg-purple-100 rounded"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         
         <div className="flex flex-wrap gap-1">
@@ -174,6 +188,7 @@ const ClaudeChat = ({
         </p>
       </div>
     </div>
+    </>
   );
 };
 

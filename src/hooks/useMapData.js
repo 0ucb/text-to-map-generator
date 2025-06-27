@@ -229,6 +229,26 @@ export const useMapData = () => {
     }
   };
 
+  const completeRegion = (regionPoints, name, color = '#3B82F6', opacity = 0.3) => {
+    if (regionPoints.length < 3) {
+      alert('A region needs at least 3 points.');
+      return false;
+    }
+
+    const newRegion = {
+      id: `region-${Date.now()}`,
+      name: name || `Region ${regions.length + 1}`,
+      type: 'custom',
+      points: regionPoints,
+      color: color,
+      opacity: opacity,
+      metadata: ''
+    };
+
+    setRegions(prev => [...prev, newRegion]);
+    return true;
+  };
+
   return {
     locations,
     setLocations,
@@ -240,6 +260,7 @@ export const useMapData = () => {
     setRegions,
     addLocations,
     removeLastAddition,
-    clearAllLocations
+    clearAllLocations,
+    completeRegion
   };
 };

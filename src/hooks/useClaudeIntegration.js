@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AIClient } from '../services/aiProviders';
 
 export const useClaudeIntegration = (locations, paths, waterways, regions) => {
   const [chatMessages, setChatMessages] = useState([]);
@@ -57,79 +58,40 @@ export const useClaudeIntegration = (locations, paths, waterways, regions) => {
         locations: locations,
         paths: paths,
         waterways: waterways,
+        regions: regions,
         summary: generateMapSummary()
       };
 
-      const prompt = `
-You are an intelligent mapping assistant with DIRECT CONTROL over a text-to-map application. You can manipulate the map directly through JSON commands.
-
-CURRENT MAP STATE:
-${JSON.stringify(currentMapData, null, 2)}
-
-CONVERSATION HISTORY:
-${JSON.stringify(chatMessages, null, 2)}
-
-USER'S CURRENT MESSAGE: "${userMessage}"
-
-You can directly manipulate the map using these action types:
-1. "addLocations": Add new locations with positions
-2. "moveLocation": Move an existing location
-3. "deleteLocation": Remove a location
-4. "renameLocation": Rename a location
-5. "addPath": Add a path between two locations
-6. "addWaterway": Add a waterway between two locations
-7. "deletePath": Remove a path
-8. "deleteWaterway": Remove a waterway
-9. "addRegion": Add a colored region with multiple points
-10. "deleteRegion": Remove a region
-11. "updateRegion": Update region properties
-12. "clearAll": Clear the entire map
-13. "optimizeLayout": Rearrange locations for better visualization
-14. "addMetadata": Add metadata to a location, path, waterway, or region
-
-Respond with a JSON object in this EXACT format:
-{
-  "response": "Your conversational response explaining what you're doing",
-  "actions": [
-    {
-      "type": "action_type",
-      "params": { ... action specific parameters ... }
-    }
-  ],
-  "analysis": "Brief analysis if relevant",
-  "suggestions": ["future suggestions if relevant"]
-}
-
-Your entire response MUST be a single, valid JSON object. DO NOT include any text outside the JSON structure.
-`;
-
-      // Mock Claude response for now - in real implementation, this would call Claude API
-      const mockResponse = {
-        response: "I understand you want to work with your map. However, I need a real Claude API integration to provide intelligent responses and map manipulation.",
-        actions: [],
-        analysis: "This is a mock response. Real Claude integration would analyze your map and provide intelligent assistance.",
-        suggestions: ["Integrate with Claude API", "Add more detailed map features", "Implement advanced natural language processing"]
-      };
+      // Use the new AI client system
+      const response = await AIClient.sendMessage(userMessage, currentMapData, chatMessages);
       
       const claudeMessage = { 
         role: 'assistant', 
-        content: mockResponse.response,
-        actions: mockResponse.actions,
-        analysis: mockResponse.analysis,
-        suggestions: mockResponse.suggestions,
+        content: response.response,
+        actions: response.actions,
+        analysis: response.analysis,
+        suggestions: response.suggestions,
         timestamp: Date.now() 
       };
       
       setChatMessages(prev => [...prev, claudeMessage]);
       
     } catch (error) {
-      console.error('Claude integration error:', error);
-      const errorMessage = { 
+      console.error('AI integration error:', error);
+      let errorMessage = "I'm sorry, I encountered an error processing your request.";
+      
+      if (error.message.includes('API key required')) {
+        errorMessage = "Please configure your AI provider API key in the settings panel.";
+      } else if (error.message.includes('API request failed')) {
+        errorMessage = "Failed to connect to the AI service. Please check your settings and try again.";
+      }
+      
+      const errorResponse = { 
         role: 'assistant', 
-        content: "I'm sorry, I encountered an error processing your request. Please try again.",
+        content: errorMessage,
         timestamp: Date.now() 
       };
-      setChatMessages(prev => [...prev, errorMessage]);
+      setChatMessages(prev => [...prev, errorResponse]);
     } finally {
       setIsClaudeThinking(false);
     }

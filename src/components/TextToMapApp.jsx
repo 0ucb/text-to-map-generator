@@ -26,7 +26,8 @@ const TextToMapApp = () => {
     setRegions,
     addLocations,
     clearAllLocations,
-    removeLastAddition
+    removeLastAddition,
+    completeRegion
   } = useMapData();
 
   // Map interaction state
@@ -44,7 +45,12 @@ const TextToMapApp = () => {
     modes,
     setModes,
     searchState,
-    setSearchState
+    setSearchState,
+    regionPoints,
+    addRegionPoint,
+    clearRegionPoints,
+    toggleMode,
+    resetView
   } = useMapInteraction();
 
   // Claude integration
@@ -75,6 +81,18 @@ const TextToMapApp = () => {
   const [validationResults, setValidationResults] = useState(null);
 
   const svgRef = useRef(null);
+
+  // Region completion handler
+  const handleCompleteRegion = () => {
+    const name = prompt('Enter region name:');
+    if (name !== null) { // null means user cancelled
+      const color = prompt('Enter region color (hex, e.g., #FF6B6B):', '#3B82F6');
+      if (completeRegion(regionPoints, name, color || '#3B82F6')) {
+        clearRegionPoints();
+        toggleMode('regionMode'); // Exit region mode
+      }
+    }
+  };
 
   return (
     <div className="w-full h-screen bg-gray-100 flex flex-col">
@@ -123,6 +141,7 @@ const TextToMapApp = () => {
       <MapControls
         zoom={zoom}
         setZoom={setZoom}
+        resetView={resetView}
         searchState={searchState}
         setSearchState={setSearchState}
         showSearchPanel={showSearchPanel}
@@ -134,13 +153,15 @@ const TextToMapApp = () => {
         showHelp={showHelp}
         setShowHelp={setShowHelp}
         modes={modes}
-        setModes={setModes}
+        toggleMode={toggleMode}
         removeLastAddition={removeLastAddition}
         clearAllLocations={clearAllLocations}
         locations={locations}
         paths={paths}
         waterways={waterways}
         regions={regions}
+        regionPoints={regionPoints}
+        handleCompleteRegion={handleCompleteRegion}
       />
 
       {/* Main content area */}
@@ -171,6 +192,8 @@ const TextToMapApp = () => {
           showMetadataPanel={showMetadataPanel}
           setShowMetadataPanel={setShowMetadataPanel}
           showChatPanel={showChatPanel}
+          regionPoints={regionPoints}
+          addRegionPoint={addRegionPoint}
         />
 
         {/* Search Panel */}

@@ -4,6 +4,7 @@ import { ZoomIn, ZoomOut, RotateCcw, X } from 'lucide-react';
 const MapControls = ({
   zoom,
   setZoom,
+  resetView,
   searchState,
   setSearchState,
   showSearchPanel,
@@ -15,35 +16,16 @@ const MapControls = ({
   showHelp,
   setShowHelp,
   modes,
-  setModes,
+  toggleMode,
   removeLastAddition,
   clearAllLocations,
   locations,
   paths,
   waterways,
-  regions
+  regions,
+  regionPoints = [],
+  handleCompleteRegion
 }) => {
-  const resetView = () => {
-    setZoom(1);
-    // This would need access to setOffset if it was passed down
-  };
-
-  const toggleMode = (modeName) => {
-    setModes(prev => {
-      const newModes = {
-        pathMode: false,
-        waterwayMode: false,
-        regionMode: false,
-        selectedNode: null
-      };
-      
-      if (!prev[modeName]) {
-        newModes[modeName] = true;
-      }
-      
-      return newModes;
-    });
-  };
 
   return (
     <div className="bg-white border-b p-2 flex items-center justify-between">
@@ -168,7 +150,13 @@ const MapControls = ({
         </button>
         
         <button
-          onClick={() => toggleMode('regionMode')}
+          onClick={() => {
+            if (modes.regionMode && regionPoints.length >= 3) {
+              handleCompleteRegion();
+            } else {
+              toggleMode('regionMode');
+            }
+          }}
           className={`p-2 rounded flex items-center gap-1 text-sm ${
             modes.regionMode 
               ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' 
@@ -178,7 +166,7 @@ const MapControls = ({
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
           </svg>
-          {modes.regionMode ? 'Add Regions' : 'Add Regions'}
+          {modes.regionMode && regionPoints.length >= 3 ? 'Complete Region' : 'Add Regions'}
         </button>
         
         {(modes.pathMode || modes.waterwayMode || modes.regionMode) && (

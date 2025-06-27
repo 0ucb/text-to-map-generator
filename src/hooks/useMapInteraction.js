@@ -22,6 +22,9 @@ export const useMapInteraction = () => {
     selectedNode: null
   });
 
+  // Region creation state
+  const [regionPoints, setRegionPoints] = useState([]);
+
   // Search state
   const [searchState, setSearchState] = useState({
     query: '',
@@ -46,8 +49,21 @@ export const useMapInteraction = () => {
         newModes[modeName] = true;
       }
       
+      // Clear region points when exiting region mode
+      if (modeName === 'regionMode' && prev.regionMode) {
+        setRegionPoints([]);
+      }
+      
       return newModes;
     });
+  };
+
+  const addRegionPoint = (point) => {
+    setRegionPoints(prev => [...prev, point]);
+  };
+
+  const clearRegionPoints = () => {
+    setRegionPoints([]);
   };
 
   return {
@@ -66,6 +82,10 @@ export const useMapInteraction = () => {
     searchState,
     setSearchState,
     resetView,
-    toggleMode
+    toggleMode,
+    regionPoints,
+    setRegionPoints,
+    addRegionPoint,
+    clearRegionPoints
   };
 };

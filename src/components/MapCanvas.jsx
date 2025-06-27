@@ -32,13 +32,14 @@ const MapCanvas = forwardRef(({
   searchState,
   showMetadataPanel,
   setShowMetadataPanel,
-  showChatPanel
+  showChatPanel,
+  regionPoints,
+  addRegionPoint
 }, ref) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [draggingNode, setDraggingNode] = useState(null);
   const [nodeOffset, setNodeOffset] = useState({ x: 0, y: 0 });
-  const [regionPoints, setRegionPoints] = useState([]);
 
   // Handle wheel zoom
   useEffect(() => {
@@ -170,7 +171,35 @@ const MapCanvas = forwardRef(({
     
     if (modes.pathMode || modes.waterwayMode) {
       e.stopPropagation();
-      // Handle path/waterway creation logic
+      
+      if (!modes.selectedNode) {
+        // First click - select starting node
+        setModes(prev => ({ ...prev, selectedNode: nodeName }));
+      } else if (modes.selectedNode !== nodeName) {
+        // Second click - create connection
+        if (modes.pathMode) {
+          const newPath = {
+            id: `path_${Date.now()}`,
+            from: modes.selectedNode,
+            to: nodeName,
+            type: 'road',
+            metadata: {}
+          };
+          setPaths(prev => [...prev, newPath]);
+        } else if (modes.waterwayMode) {
+          const newWaterway = {
+            id: `waterway_${Date.now()}`,
+            from: modes.selectedNode,
+            to: nodeName,
+            type: 'river',
+            metadata: {}
+          };
+          setWaterways(prev => [...prev, newWaterway]);
+        }
+        
+        // Reset selection
+        setModes(prev => ({ ...prev, selectedNode: null }));
+      }
       return;
     }
 
@@ -361,6 +390,7 @@ const MapCanvas = forwardRef(({
       };
       
       const isSelected = selectedItem?.type === 'location' && selectedItem?.name === name;
+      const isSelectedForConnection = modes.selectedNode === name;
       
       return (
         <g key={name}>
@@ -369,8 +399,8 @@ const MapCanvas = forwardRef(({
             cy={screenPos.y}
             r={isSelected ? 12 : (modes.pathMode || modes.waterwayMode) ? 10 : 8}
             fill={colors[pos.type] || colors.unknown}
-            stroke={isSelected ? '#1e40af' : 'white'}
-            strokeWidth={isSelected ? 3 : 2}
+            stroke={isSelected ? '#1e40af' : isSelectedForConnection ? '#f59e0b' : 'white'}
+            strokeWidth={isSelected ? 3 : isSelectedForConnection ? 4 : 2}
             className="drop-shadow-sm transition-all cursor-pointer"
             onMouseDown={(modes.pathMode || modes.waterwayMode || modes.regionMode) ? undefined : (e) => handleNodeMouseDown(e, name)}
             onClick={(e) => handleNodeClick(e, name)}
@@ -437,6 +467,26 @@ const MapCanvas = forwardRef(({
           locations={locations}
           setLocations={setLocations}
         />
+      )}
+
+      {/* Path/Waterway Creation Status */}
+      {(modes.pathMode || modes.waterwayMode) && (
+        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-gray-200">
+          <div className="flex items-center gap-2 text-sm">
+            <div className={`w-3 h-3 rounded-full ${modes.pathMode ? 'bg-blue-500' : 'bg-cyan-500'}`}></div>
+            <span className="font-medium">
+              {modes.selectedNode 
+                ? `Click another location to create ${modes.pathMode ? 'path' : 'waterway'} from "${modes.selectedNode}"` 
+                : `Click a location to start creating ${modes.pathMode ? 'path' : 'waterway'}`
+              }
+            </span>
+          </div>
+          {modes.selectedNode && (
+            <div className="mt-2 text-xs text-gray-600">
+              Selected: <span className="font-medium text-orange-600">{modes.selectedNode}</span>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
