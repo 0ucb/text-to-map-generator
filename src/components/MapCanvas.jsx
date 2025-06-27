@@ -102,7 +102,7 @@ const MapCanvas = forwardRef(({
     if (modes.regionMode) {
       const rect = ref.current.getBoundingClientRect();
       const mapCoords = toMap(e.clientX - rect.left, e.clientY - rect.top, zoom, offset);
-      setRegionPoints(prev => [...prev, mapCoords]);
+      addRegionPoint(mapCoords);
       return;
     }
     
@@ -165,7 +165,7 @@ const MapCanvas = forwardRef(({
     if (modes.regionMode) {
       e.stopPropagation();
       const loc = locations[nodeName];
-      setRegionPoints(prev => [...prev, { x: loc.x, y: loc.y }]);
+      addRegionPoint({ x: loc.x, y: loc.y });
       return;
     }
     
