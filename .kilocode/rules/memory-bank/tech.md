@@ -3,7 +3,7 @@
 ## Build System & Development
 
 ### Core Build Tools
-- **Vite 6.0.3** - Next-generation frontend build tool
+- **Vite 6.3.5** - Next-generation frontend build tool
   - Lightning-fast HMR and dev server
   - Optimized production builds with Rollup
   - Native ES modules support
@@ -181,7 +181,7 @@ export default defineConfig({
   "@eslint/js": "^9.17.0",
   "@types/react": "^18.3.12",
   "@types/react-dom": "^18.3.1",
-  "@vitejs/plugin-react": "^4.3.3",
+  "@vitejs/plugin-react": "^4.6.0",
   "autoprefixer": "^10.4.20",
   "eslint": "^9.17.0",
   "globals": "^15.14.0",
@@ -189,7 +189,7 @@ export default defineConfig({
   "postcss": "^8.5.1",
   "tailwindcss": "^3.4.17",
   "typescript": "^5.7.2",
-  "vite": "^6.0.3",
+  "vite": "^6.3.5",
   "vitest": "^2.1.8"
 }
 ```

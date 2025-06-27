@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    target: 'baseline-widely-available',
+    target: 'es2015',
     sourcemap: true,
     rollupOptions: {
       output: {

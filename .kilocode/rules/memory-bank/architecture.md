@@ -27,16 +27,17 @@ src/
 - `MetadataPanel.jsx` - Element information editor for detailed data
 - `MapDataPanel.jsx` - Import/export functionality with JSON support
 - `HelpPanel.jsx` - User guidance and syntax examples
-- `SearchPanel.jsx` - Element search and filtering interface
-- `ValidationPanel.jsx` - Input validation and error reporting
-- `ContextMenu.jsx` - Right-click actions for map elements
+- `SearchPanel.jsx` - Element search and filtering with focus management
+- `ValidationPanel.jsx` - Comprehensive validation results (critical, warnings, duplicates)
+- `ContextMenu.jsx` - Right-click actions for map elements (delete, rename)
+- `RegionModal.jsx` - Region creation modal with color picker and validation
 
 **Map Rendering Components:**
-- `GridPattern.jsx` - SVG grid background pattern
-- `ScaleIndicator.jsx` - Distance scale visualization
+- `GridPattern.jsx` - SVG grid background pattern for visual reference
+- `ScaleIndicator.jsx` - Dynamic distance scale based on zoom level
 - `CompassRose.jsx` - Navigation orientation indicator
-- `MapLegend.jsx` - Element type and status legend
-- `RegionPreview.jsx` - Preview for region creation mode
+- `MapLegend.jsx` - Element type and status legend with statistics
+- `RegionPreview.jsx` - Real-time preview during region creation mode
 
 ### Custom Hooks Architecture
 
@@ -57,9 +58,10 @@ src/
 
 3. **`useClaudeIntegration.js`** - AI assistant integration
    - Manages chat messages and conversation state
-   - Integrates with multi-provider AI system via AIClient
-   - Handles map analysis and suggestion features
+   - Integrates with multi-provider AI system via AIClient (production system)
+   - Handles map analysis and suggestion features with real API calls
    - Provides quick action functions for common AI requests
+   - Manages AI provider configuration and error handling
 
 ### Service Layer
 

@@ -64,7 +64,9 @@ The application processes diverse linguistic patterns:
 - Dual-mode operation: Text-driven and manual creation
 - Multi-element support: locations, paths, waterways, and regions
 - Real-time editing with drag-and-drop functionality
-- Connection modes for creating paths and waterways
+- Connection modes for creating paths and waterways with visual feedback
+- Sophisticated region creation with color picker (16 presets + custom)
+- Context menu actions for element management (delete, rename)
 
 ### AI Enhancement
 - Multi-provider support (OpenAI, Anthropic, Google, DeepSeek, local models)
@@ -74,6 +76,8 @@ The application processes diverse linguistic patterns:
 
 ### Data Management
 - Complete state persistence via JSON export/import
-- Undo/redo functionality with action history
-- Search and filtering across all map elements
+- Undo/redo functionality with 10-action history
+- Search and filtering across all map elements with focus management
 - Comprehensive metadata support for detailed element information
+- Three-tier validation system (critical issues, warnings, duplicates)
+- Batch and incremental processing modes for text input
