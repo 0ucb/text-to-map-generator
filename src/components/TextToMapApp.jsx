@@ -27,7 +27,14 @@ const TextToMapApp = () => {
     addLocations,
     clearAllLocations,
     removeLastAddition,
-    completeRegion
+    completeRegion,
+    undo,
+    undoStack,
+    deleteLocation,
+    deletePath,
+    deleteWaterway,
+    deleteRegion,
+    renameLocation
   } = useMapData();
 
   // Map interaction state
@@ -194,6 +201,13 @@ const TextToMapApp = () => {
           showChatPanel={showChatPanel}
           regionPoints={regionPoints}
           addRegionPoint={addRegionPoint}
+          deleteLocation={deleteLocation}
+          deletePath={deletePath}
+          deleteWaterway={deleteWaterway}
+          deleteRegion={deleteRegion}
+          renameLocation={renameLocation}
+          undo={undo}
+          undoStack={undoStack}
         />
 
         {/* Search Panel */}

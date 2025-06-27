@@ -34,7 +34,14 @@ const MapCanvas = forwardRef(({
   setShowMetadataPanel,
   showChatPanel,
   regionPoints,
-  addRegionPoint
+  addRegionPoint,
+  deleteLocation,
+  deletePath,
+  deleteWaterway,
+  deleteRegion,
+  renameLocation,
+  undo,
+  undoStack
 }, ref) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -95,6 +102,43 @@ const MapCanvas = forwardRef(({
       return () => document.removeEventListener('click', handleClickOutside);
     }
   }, [contextMenu, setContextMenu]);
+
+  // Handle keyboard events
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Only handle keyboard events when canvas area is focused (not in input fields)
+      if (document.activeElement?.tagName === 'INPUT' || 
+          document.activeElement?.tagName === 'TEXTAREA' ||
+          document.activeElement?.contentEditable === 'true') {
+        return;
+      }
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedItem) {
+        e.preventDefault();
+        if (selectedItem.type === 'location') {
+          deleteLocation(selectedItem.name);
+        } else if (selectedItem.type === 'path') {
+          deletePath(selectedItem.id);
+        } else if (selectedItem.type === 'waterway') {
+          deleteWaterway(selectedItem.id);
+        } else if (selectedItem.type === 'region') {
+          deleteRegion(selectedItem.id);
+        }
+        setSelectedItem(null);
+        setShowMetadataPanel(false);
+      }
+
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        undo();
+        setSelectedItem(null);
+        setShowMetadataPanel(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedItem, deleteLocation, deletePath, deleteWaterway, deleteRegion, undo, setSelectedItem, setShowMetadataPanel]);
 
   const handleMouseDown = (e) => {
     if (e.button !== 0 || draggingNode) return;
@@ -206,6 +250,17 @@ const MapCanvas = forwardRef(({
     // Handle regular node selection
     setSelectedItem({ type: 'location', name: nodeName, ...locations[nodeName] });
     setShowMetadataPanel(true);
+  };
+
+  const handleNodeContextMenu = (e, nodeName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      locationName: nodeName
+    });
   };
 
   const handleItemClick = (item, e) => {
@@ -404,6 +459,7 @@ const MapCanvas = forwardRef(({
             className="drop-shadow-sm transition-all cursor-pointer"
             onMouseDown={(modes.pathMode || modes.waterwayMode || modes.regionMode) ? undefined : (e) => handleNodeMouseDown(e, name)}
             onClick={(e) => handleNodeClick(e, name)}
+            onContextMenu={(e) => handleNodeContextMenu(e, name)}
           />
           <text
             x={screenPos.x}
@@ -466,6 +522,8 @@ const MapCanvas = forwardRef(({
           setContextMenu={setContextMenu}
           locations={locations}
           setLocations={setLocations}
+          deleteLocation={deleteLocation}
+          renameLocation={renameLocation}
         />
       )}
 
@@ -486,6 +544,14 @@ const MapCanvas = forwardRef(({
               Selected: <span className="font-medium text-orange-600">{modes.selectedNode}</span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Undo Indicator */}
+      {undoStack.length > 0 && (
+        <div className="absolute bottom-4 left-4 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+          <span>Ctrl+Z to undo</span>
+          <span className="opacity-60">({undoStack.length})</span>
         </div>
       )}
     </div>

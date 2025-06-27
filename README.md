@@ -15,7 +15,7 @@ cd text-to-map-generator
 npm install
 
 # Start the development server
-npm start
+npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
@@ -42,15 +42,26 @@ Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 ## 🔧 Development Setup
 
 ### Prerequisites
-- Node.js 16 or higher
+- Node.js 20.19+ or 22.12+ (latest LTS recommended)
 - npm or yarn
 
 ### Available Scripts
-- `npm start` - Runs the app in development mode
-- `npm run build` - Builds the app for production
-- `npm test` - Launches the test runner
-- `npm run lint` - Runs ESLint on the source code
+- `npm run dev` - Runs the app in development mode with Vite
+- `npm run build` - Builds the app for production with optimizations
+- `npm run preview` - Preview the production build locally
+- `npm run test` - Launches Vitest test runner
+- `npm run test:ui` - Opens Vitest UI for interactive testing
+- `npm run coverage` - Runs tests with coverage report
+- `npm run lint` - Runs modern ESLint on the source code
 - `npm run lint:fix` - Fixes ESLint issues automatically
+- `npm run type-check` - Runs TypeScript type checking
+
+### Modern Build System
+This project uses **Vite** instead of Create React App for:
+- ⚡ Lightning fast development server with HMR
+- 📦 Optimized production builds with tree-shaking
+- 🔧 Modern tooling with native ES modules
+- 🚀 Instant server start and fast hot reload
 
 ### Project Structure
 ```
@@ -307,11 +318,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **React** - UI framework
-- **Tailwind CSS** - Styling framework  
-- **Lucide React** - Icon library
+- **React 18** - Modern UI framework with concurrent features
+- **Vite** - Next-generation frontend build tool
+- **Vitest** - Fast unit testing powered by Vite
+- **Tailwind CSS** - Utility-first styling framework  
+- **Lucide React** - Beautiful icon library
+- **ESLint 9** - Modern JavaScript/React linting
 - **Claude by Anthropic** - AI integration inspiration
-- **Create React App** - Development toolchain
 
 ---
 

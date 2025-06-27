@@ -8,11 +8,15 @@ Text-to-Map Generator is a modular React application that converts natural langu
 
 ## Development Commands
 
-- **Start development server**: `npm start`
-- **Build for production**: `npm run build`
-- **Run tests**: `npm run test`
-- **Lint code**: `npm run lint`
+- **Start development server**: `npm run dev` (Vite dev server on port 3000)
+- **Build for production**: `npm run build` (Vite optimized build)
+- **Preview production build**: `npm run preview` (Vite preview server)
+- **Run tests**: `npm run test` (Vitest test runner)
+- **Test with UI**: `npm run test:ui` (Interactive test interface)
+- **Coverage report**: `npm run coverage` (Test coverage analysis)
+- **Lint code**: `npm run lint` (Modern ESLint 9)
 - **Fix lint issues**: `npm run lint:fix`
+- **Type checking**: `npm run type-check` (TypeScript validation)
 - **Install dependencies**: `npm install`
 
 ## Architecture
@@ -113,12 +117,16 @@ Supports comprehensive natural language patterns:
 - **Renaming**: "The village is named Riverside"
 
 ### Technology Stack
-- React 18 with Create React App
-- Tailwind CSS for styling
-- Lucide React for icons
-- Custom React hooks for state management
-- SVG for map rendering
-- No external state management library
+- **React 18** with latest features (Concurrent Mode, Automatic batching)
+- **Vite 6** for lightning-fast development and optimized builds
+- **Vitest 2** for modern testing with native ES modules
+- **ESLint 9** with flat config for modern linting
+- **TypeScript 5** for enhanced type safety
+- **Tailwind CSS 3** for utility-first styling
+- **Lucide React** for consistent iconography
+- **Custom React hooks** for clean state management
+- **SVG rendering** for infinite scalability
+- **JSX** file extensions for explicit React components
 
 ## Key Implementation Notes
 

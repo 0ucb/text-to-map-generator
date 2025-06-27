@@ -7,6 +7,99 @@ export const useMapData = () => {
   const [paths, setPaths] = useState([]);
   const [waterways, setWaterways] = useState([]);
   const [regions, setRegions] = useState([]);
+  const [undoStack, setUndoStack] = useState([]);
+
+  // Undo functionality
+  const saveStateToUndo = (action) => {
+    const state = {
+      locations: { ...locations },
+      paths: [...paths],
+      waterways: [...waterways],
+      regions: [...regions],
+      action,
+      timestamp: Date.now()
+    };
+    setUndoStack(prev => [...prev.slice(-9), state]); // Keep last 10 actions
+  };
+
+  const undo = () => {
+    if (undoStack.length === 0) return false;
+    
+    const lastState = undoStack[undoStack.length - 1];
+    setLocations(lastState.locations);
+    setPaths(lastState.paths);
+    setWaterways(lastState.waterways);
+    setRegions(lastState.regions);
+    setUndoStack(prev => prev.slice(0, -1));
+    return true;
+  };
+
+  // Delete functions
+  const deleteLocation = (locationName) => {
+    saveStateToUndo(`delete location: ${locationName}`);
+    
+    // Remove the location
+    setLocations(prev => {
+      const newLocations = { ...prev };
+      delete newLocations[locationName];
+      return newLocations;
+    });
+    
+    // Remove paths connected to this location
+    setPaths(prev => prev.filter(path => 
+      path.from !== locationName && path.to !== locationName
+    ));
+    
+    // Remove waterways connected to this location
+    setWaterways(prev => prev.filter(waterway => 
+      waterway.from !== locationName && waterway.to !== locationName
+    ));
+  };
+
+  const deletePath = (pathId) => {
+    saveStateToUndo(`delete path: ${pathId}`);
+    setPaths(prev => prev.filter(path => path.id !== pathId));
+  };
+
+  const deleteWaterway = (waterwayId) => {
+    saveStateToUndo(`delete waterway: ${waterwayId}`);
+    setWaterways(prev => prev.filter(waterway => waterway.id !== waterwayId));
+  };
+
+  const deleteRegion = (regionId) => {
+    saveStateToUndo(`delete region: ${regionId}`);
+    setRegions(prev => prev.filter(region => region.id !== regionId));
+  };
+
+  const renameLocation = (oldName, newName) => {
+    if (!newName.trim() || oldName === newName.trim()) return false;
+    
+    saveStateToUndo(`rename location: ${oldName} to ${newName}`);
+    
+    // Update location name
+    setLocations(prev => {
+      const newLocations = { ...prev };
+      newLocations[newName.trim()] = { ...newLocations[oldName] };
+      delete newLocations[oldName];
+      return newLocations;
+    });
+    
+    // Update paths that reference this location
+    setPaths(prev => prev.map(path => ({
+      ...path,
+      from: path.from === oldName ? newName.trim() : path.from,
+      to: path.to === oldName ? newName.trim() : path.to
+    })));
+    
+    // Update waterways that reference this location
+    setWaterways(prev => prev.map(waterway => ({
+      ...waterway,
+      from: waterway.from === oldName ? newName.trim() : waterway.from,
+      to: waterway.to === oldName ? newName.trim() : waterway.to
+    })));
+    
+    return true;
+  };
 
   const addLocations = (inputText, options = {}) => {
     if (!inputText.trim()) return;
@@ -261,6 +354,13 @@ export const useMapData = () => {
     addLocations,
     removeLastAddition,
     clearAllLocations,
-    completeRegion
+    completeRegion,
+    undo,
+    undoStack,
+    deleteLocation,
+    deletePath,
+    deleteWaterway,
+    deleteRegion,
+    renameLocation
   };
 };
