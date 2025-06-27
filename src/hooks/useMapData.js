@@ -102,7 +102,9 @@ export const useMapData = () => {
   };
 
   const addLocations = (inputText, options = {}) => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim()) {
+      return { success: false, error: 'No input text provided' };
+    }
 
     const parsed = parseLocationText(inputText);
     const validation = validateAdditions(parsed, locations);
@@ -120,6 +122,9 @@ export const useMapData = () => {
   };
 
   const applyParsedData = (parsedData) => {
+    // Save current state before making changes
+    saveStateToUndo('add locations from text');
+    
     const { relationships, pathRelationships, waterwayRelationships, locationRenamings } = parsedData;
     const newLocations = { ...locations };
     

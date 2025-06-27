@@ -199,7 +199,7 @@ export class AISettings {
       config.chatEndpoint = customEndpoints[provider];
       // Update models endpoint for local providers
       if (config.modelsEndpoint) {
-        config.modelsEndpoint = customEndpoints[provider].replace('/chat/completions', '/models');
+        config.modelsEndpoint = (customEndpoints[provider] || '').replace('/chat/completions', '/models');
       }
     }
     
@@ -536,7 +536,7 @@ Your entire response MUST be a single, valid JSON object. DO NOT include any tex
   }
 
   static async sendGoogleRequest(config, apiKey, prompt) {
-    const endpoint = config.chatEndpoint.replace('{model}', config.selectedModel);
+    const endpoint = (config.chatEndpoint || '').replace('{model}', config.selectedModel || '');
     
     const response = await fetch(`${endpoint}?key=${apiKey}`, {
       method: 'POST',

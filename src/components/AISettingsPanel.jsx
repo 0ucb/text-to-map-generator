@@ -102,7 +102,7 @@ const AISettingsPanel = ({ isOpen, onClose }) => {
       let response;
       
       if (provider === AI_PROVIDERS.GOOGLE) {
-        const testEndpoint = endpoint.replace('{model}', selectedModels[provider] || config.defaultModel);
+        const testEndpoint = (endpoint || '').replace('{model}', selectedModels[provider] || config.defaultModel || '');
         response = await fetch(`${testEndpoint}?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

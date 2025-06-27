@@ -16,8 +16,15 @@ const TextInput = ({
     // If validation failed, try with skipValidation option
     if (result && !result.success && result.validation) {
       if (confirm(`Found ${result.validation.issues.length} issues and ${result.validation.warnings.length} warnings. Add anyway?`)) {
-        addLocations(inputText, { skipValidation: true });
+        const skipResult = addLocations(inputText, { skipValidation: true });
+        // Clear input on success
+        if (skipResult && skipResult.success) {
+          setInputText('');
+        }
       }
+    } else if (result && result.success) {
+      // Clear input on success
+      setInputText('');
     }
   };
 
