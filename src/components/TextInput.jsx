@@ -10,7 +10,15 @@ const TextInput = ({
 }) => {
   const handleAddLocations = () => {
     if (!inputText.trim()) return;
-    addLocations(inputText);
+    
+    const result = addLocations(inputText);
+    
+    // If validation failed, try with skipValidation option
+    if (result && !result.success && result.validation) {
+      if (confirm(`Found ${result.validation.issues.length} issues and ${result.validation.warnings.length} warnings. Add anyway?`)) {
+        addLocations(inputText, { skipValidation: true });
+      }
+    }
   };
 
   const exampleTexts = [

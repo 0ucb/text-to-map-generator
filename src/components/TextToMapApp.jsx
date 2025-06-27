@@ -9,6 +9,7 @@ import MapDataPanel from './MapDataPanel';
 import HelpPanel from './HelpPanel';
 import MapControls from './MapControls';
 import TextInput from './TextInput';
+import RegionModal from './RegionModal';
 import { useMapData } from '../hooks/useMapData';
 import { useMapInteraction } from '../hooks/useMapInteraction';
 import { useClaudeIntegration } from '../hooks/useClaudeIntegration';
@@ -80,6 +81,7 @@ const TextToMapApp = () => {
   const [showChatPanel, setShowChatPanel] = useState(false);
   const [showValidationPanel, setShowValidationPanel] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [showRegionModal, setShowRegionModal] = useState(false);
 
   // Input and processing states
   const [inputText, setInputText] = useState('Washington DC is the reference point. New York City is 3 miles north of Washington DC. Los Angeles is 15 miles west of Washington DC. Chicago is 8 miles northwest of Washington DC. Miami is 6 miles south of Washington DC. Seattle is 12 miles northwest of Washington DC. Denver is 10 miles west of Washington DC. Boston is 4 miles northeast of Washington DC. New Orleans is 8 miles southwest of Washington DC. Detroit is 3 miles north of Chicago. The Mississippi River flows from Chicago to New Orleans. Interstate 95 runs from Miami to Boston. Interstate 10 connects Los Angeles and New Orleans. The Rocky Mountains are near Denver. The Great Lakes are near Detroit.');
@@ -91,13 +93,15 @@ const TextToMapApp = () => {
 
   // Region completion handler
   const handleCompleteRegion = () => {
-    const name = prompt('Enter region name:');
-    if (name !== null) { // null means user cancelled
-      const color = prompt('Enter region color (hex, e.g., #FF6B6B):', '#3B82F6');
-      if (completeRegion(regionPoints, name, color || '#3B82F6')) {
-        clearRegionPoints();
-        toggleMode('regionMode'); // Exit region mode
-      }
+    if (regionPoints.length >= 3) {
+      setShowRegionModal(true);
+    }
+  };
+
+  const handleRegionConfirm = (name, color) => {
+    if (completeRegion(regionPoints, name, color)) {
+      clearRegionPoints();
+      toggleMode('regionMode'); // Exit region mode
     }
   };
 
@@ -262,6 +266,14 @@ const TextToMapApp = () => {
             regions={regions}
           />
         )}
+
+        {/* Region Modal */}
+        <RegionModal
+          isOpen={showRegionModal}
+          onClose={() => setShowRegionModal(false)}
+          onConfirm={handleRegionConfirm}
+          pointCount={regionPoints.length}
+        />
       </div>
     </div>
   );

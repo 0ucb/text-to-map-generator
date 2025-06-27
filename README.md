@@ -8,7 +8,7 @@ An interactive map creation tool that converts natural language descriptions int
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/text-to-map-generator.git
+git clone https://github.com/0ucb/text-to-map-generator.git
 cd text-to-map-generator
 
 # Install dependencies
