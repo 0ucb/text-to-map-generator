@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     target: 'es2015',
+    outDir: 'build',
     sourcemap: true,
     rollupOptions: {
       output: {
