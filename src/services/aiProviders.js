@@ -196,10 +196,20 @@ export class AISettings {
     
     // Only allow custom endpoints for local providers
     if (customEndpoints[provider] && config.customEndpoint) {
-      config.chatEndpoint = customEndpoints[provider];
-      // Update models endpoint for local providers
-      if (config.modelsEndpoint) {
-        config.modelsEndpoint = (customEndpoints[provider] || '').replace('/chat/completions', '/models');
+      const baseUrl = customEndpoints[provider].replace(/\/+$/, ''); // Remove trailing slashes
+      
+      // For OpenAI-like providers, append the API paths to the base URL
+      if (provider === AI_PROVIDERS.LM_STUDIO || provider === AI_PROVIDERS.OPENAI || provider === AI_PROVIDERS.DEEPSEEK) {
+        config.chatEndpoint = `${baseUrl}/v1/chat/completions`;
+        if (config.modelsEndpoint) {
+          config.modelsEndpoint = `${baseUrl}/v1/models`;
+        }
+      } else {
+        // For other custom providers, use the full URL as provided
+        config.chatEndpoint = customEndpoints[provider];
+        if (config.modelsEndpoint) {
+          config.modelsEndpoint = (customEndpoints[provider] || '').replace('/chat/completions', '/models');
+        }
       }
     }
     

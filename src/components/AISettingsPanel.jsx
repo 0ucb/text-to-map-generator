@@ -92,7 +92,14 @@ const AISettingsPanel = ({ isOpen, onClose }) => {
       // Simple test request to verify the API key and endpoint work
       const config = PROVIDER_CONFIG[provider];
       const apiKey = apiKeys[provider];
-      const endpoint = customEndpoints[provider] || config.endpoint;
+      // Handle custom endpoints for OpenAI-like providers
+      let endpoint = customEndpoints[provider] || config.chatEndpoint || config.endpoint;
+      if (customEndpoints[provider] && config.customEndpoint) {
+        const baseUrl = customEndpoints[provider].replace(/\/+$/, ''); // Remove trailing slashes
+        if (provider === AI_PROVIDERS.LM_STUDIO || provider === AI_PROVIDERS.OPENAI || provider === AI_PROVIDERS.DEEPSEEK) {
+          endpoint = `${baseUrl}/v1/chat/completions`;
+        }
+      }
       console.log('Endpoint:', endpoint, 'Config:', config);
       
       if (config.requiresApiKey && !apiKey) {
@@ -257,7 +264,7 @@ const AISettingsPanel = ({ isOpen, onClose }) => {
                 {config.customEndpoint && (
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Custom Endpoint URL (Local)
+                      Custom Base URL (Local)
                     </label>
                     <input
                       type="text"
@@ -266,11 +273,15 @@ const AISettingsPanel = ({ isOpen, onClose }) => {
                         ...customEndpoints,
                         [providerKey]: e.target.value
                       })}
-                      placeholder={config.chatEndpoint}
+                      placeholder={
+                        providerKey === 'lm_studio' ? 'http://127.0.0.1:1234' :
+                        providerKey === 'deepseek' ? 'https://api.deepseek.com' :
+                        'http://localhost:5001'
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Default: {config.chatEndpoint}
+                      Enter base URL only. API paths (/v1/chat/completions, /v1/models) will be added automatically.
                     </p>
                   </div>
                 )}
