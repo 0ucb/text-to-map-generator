@@ -88,10 +88,12 @@ const AISettingsPanel = ({ isOpen, onClose }) => {
     setTestResults({ ...testResults, [provider]: 'testing' });
     
     try {
+      console.log('Testing connection for provider:', provider);
       // Simple test request to verify the API key and endpoint work
       const config = PROVIDER_CONFIG[provider];
       const apiKey = apiKeys[provider];
       const endpoint = customEndpoints[provider] || config.endpoint;
+      console.log('Endpoint:', endpoint, 'Config:', config);
       
       if (config.requiresApiKey && !apiKey) {
         throw new Error('API key required');
@@ -140,6 +142,8 @@ const AISettingsPanel = ({ isOpen, onClose }) => {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
+      console.error('Connection test failed for', provider, ':', error);
+      console.error('Error stack:', error.stack);
       setTestResults({ ...testResults, [provider]: `error: ${error.message}` });
     } finally {
       setIsTestingConnection(false);

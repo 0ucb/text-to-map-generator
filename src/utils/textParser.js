@@ -18,6 +18,7 @@ export const parseLocationText = (text) => {
   
   // Helper function to clean and validate location names
   const cleanLocationName = (name) => {
+    if (!name || typeof name !== 'string') return null;
     let cleaned = name.trim().replace(/^(the\s+|a\s+|an\s+)/i, '');
     
     if (cleaned.length < 2 || excludeWords.has(cleaned.toLowerCase())) {
@@ -284,6 +285,7 @@ export const parseLocationText = (text) => {
     const matches = findMatches(patternObj.regex, text);
     
     matches.forEach(match => {
+      if (!match[1] || !match[2]) return;
       const oldName = match[1].trim().replace(/^(the\s+|a\s+|an\s+)/i, '');
       const newName = match[2].trim();
       
